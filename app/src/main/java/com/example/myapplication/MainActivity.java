@@ -185,84 +185,84 @@ public class MainActivity extends AppCompatActivity {
         isReceiving = true;
         new Thread(() -> {
             InputStream inputStream = null;
-            ByteArrayOutputStream buffer = null;
+//            ByteArrayOutputStream buffer = null;
             try {
                 inputStream = socket.getInputStream();
-//                ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+                ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 BufferedInputStream bis = new BufferedInputStream(inputStream);
-                buffer = new ByteArrayOutputStream();
-//                byte[] buffer = new byte[4096]; // 增大缓冲区
+//                buffer = new ByteArrayOutputStream();
+                byte[] buffer = new byte[4096]; // 增大缓冲区
                 int bytesRead;
-//                byte[] imageData = new byte[0];
+                byte[] imageData = new byte[0];
 
-//                while ((bytesRead = inputStream.read(buffer)) != -1) {
-//                    byteBuffer.write(buffer, 0, bytesRead);
-///                   byte[] data = byteBuffer.toByteArray();
-//
-//                    // 检查是否接收到完整的 JPEG 图像
-//                    if (isCompleteImage(data)) {
-//                        Log.d(TAG, "完整图像大小: " + data.length);
-//
-//                        // 解码并显示图像
-//                        decodeAndDisplayImage(data);
-//                        byteBuffer.reset(); // 重置缓冲区
-//                    }
-//
-//                    // 检查缓冲区大小，避免无限增长
-//                    if (byteBuffer.size() > 1024 * 1024) { // 最大 1MB
-//                        byteBuffer.reset();
-//                    }
-//                }
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    byteBuffer.write(buffer, 0, bytesRead);
+                   byte[] data = byteBuffer.toByteArray();
 
-//                while ((bytesRead = bis.read(buffer)) != -1) {
-//                    byte[] temp = new byte[imageData.length + bytesRead];
-//                    System.arraycopy(imageData, 0, temp, 0, imageData.length);
-//                    System.arraycopy(buffer, 0, temp, imageData.length, bytesRead);
-//                    imageData = temp;
-//
-//                    if (isCompleteImage(imageData)) {
-//                        decodeAndDisplayImage(imageData);
-//                        imageData = new byte[0];
-//                    }
-//                }
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = 2; // 根据实际调整采样率
-                options.inPreferredConfig = Bitmap.Config.RGB_565;
+                    // 检查是否接收到完整的 JPEG 图像
+                    if (isCompleteImage(data)) {
+                        Log.d(TAG, "完整图像大小: " + data.length);
 
-                while (isReceiving && !Thread.currentThread().isInterrupted()) {
-                    int readByte;
-                    // 使用JPEG起始/结束标记判断图片边界
-                    while ((readByte = bis.read()) != -1) {
-                        buffer.write(readByte);
+                        // 解码并显示图像
+                        decodeAndDisplayImage(data);
+                        byteBuffer.reset(); // 重置缓冲区
+                    }
 
-                        // 检测JPEG结束标记(0xFFD9)
-                        if (buffer.size() > 1
-                                && (buffer.toByteArray()[buffer.size() - 2] & 0xFF) == 0xFF
-                                && (buffer.toByteArray()[buffer.size() - 1] & 0xFF) == 0xD9) {
-
-                            // 解码前回收旧Bitmap
-                            if (currentBitmap != null && !currentBitmap.isRecycled()) {
-                                currentBitmap.recycle();
-                            }
-
-                            // 解码并显示
-                            byte[] imageData = buffer.toByteArray();
-                            currentBitmap = BitmapFactory.decodeByteArray(
-                                    imageData, 0, imageData.length, options);
-
-                            runOnUiThread(() -> {
-                                videoView.setImageBitmap(currentBitmap);
-                            });
-
-                            buffer.reset(); // 清空缓冲区
-                            break; // 处理下一张图片
-                        }
+                    // 检查缓冲区大小，避免无限增长
+                    if (byteBuffer.size() > 1024 * 1024) { // 最大 1MB
+                        byteBuffer.reset();
                     }
                 }
+
+                while ((bytesRead = bis.read(buffer)) != -1) {
+                    byte[] temp = new byte[imageData.length + bytesRead];
+                    System.arraycopy(imageData, 0, temp, 0, imageData.length);
+                    System.arraycopy(buffer, 0, temp, imageData.length, bytesRead);
+                    imageData = temp;
+
+                    if (isCompleteImage(imageData)) {
+                        decodeAndDisplayImage(imageData);
+                        imageData = new byte[0];
+                    }
+                }
+//                BitmapFactory.Options options = new BitmapFactory.Options();
+//                options.inSampleSize = 2; // 根据实际调整采样率
+//                options.inPreferredConfig = Bitmap.Config.RGB_565;
+//
+//                while (isReceiving && !Thread.currentThread().isInterrupted()) {
+//                    int readByte;
+//                    // 使用JPEG起始/结束标记判断图片边界
+//                    while ((readByte = bis.read()) != -1) {
+//                        buffer.write(readByte);
+//
+//                        // 检测JPEG结束标记(0xFFD9)
+//                        if (buffer.size() > 1
+//                                && (buffer.toByteArray()[buffer.size() - 2] & 0xFF) == 0xFF
+//                                && (buffer.toByteArray()[buffer.size() - 1] & 0xFF) == 0xD9) {
+//
+//                            // 解码前回收旧Bitmap
+//                            if (currentBitmap != null && !currentBitmap.isRecycled()) {
+//                                currentBitmap.recycle();
+//                            }
+//
+//                            // 解码并显示
+//                            byte[] imageData = buffer.toByteArray();
+//                            currentBitmap = BitmapFactory.decodeByteArray(
+//                                    imageData, 0, imageData.length, options);
+//
+//                            runOnUiThread(() -> {
+//                                videoView.setImageBitmap(currentBitmap);
+//                            });
+//
+//                            buffer.reset(); // 清空缓冲区
+//                            break; // 处理下一张图片
+//                        }
+//                    }
+//                }
             } catch (IOException e) {
                 Log.e(TAG, "接收图像错误: " + e.getMessage());
             } finally {
-                closeResources(inputStream, buffer);
+//                closeResources(inputStream, buffer);
             }
         }).start();
     }
