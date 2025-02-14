@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 if ("fire".equalsIgnoreCase(message)) {
                     sendFireCommand();
                 }
-                updateClientMessage(message);
+//                updateClientMessage(message);
             }
         } catch (IOException e) {
             Log.e(TAG, "读取消息错误: " + e.getMessage());
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             inputStream = socket.getInputStream();
             ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-            byte[] buffer = new byte[4096]; // 增大缓冲区
+            byte[] buffer = new byte[2048]; // 增大缓冲区
             int bytesRead;
 
             while ((bytesRead = inputStream.read(buffer)) != -1) {
