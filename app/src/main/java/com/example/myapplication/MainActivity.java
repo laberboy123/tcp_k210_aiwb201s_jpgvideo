@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 if ("fire".equalsIgnoreCase(message)) {
                     sendFireCommand();
                 }
-//                updateClientMessage(message);
+                updateClientMessage(message);
             }
         } catch (IOException e) {
             Log.e(TAG, "读取消息错误: " + e.getMessage());
@@ -185,15 +185,13 @@ public class MainActivity extends AppCompatActivity {
         isReceiving = true;
         new Thread(() -> {
             InputStream inputStream = null;
-//            ByteArrayOutputStream buffer = null;
             try {
                 inputStream = socket.getInputStream();
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-                BufferedInputStream bis = new BufferedInputStream(inputStream);
-//                buffer = new ByteArrayOutputStream();
+//                BufferedInputStream bis = new BufferedInputStream(inputStream);
                 byte[] buffer = new byte[4096]; // 增大缓冲区
                 int bytesRead;
-                byte[] imageData = new byte[0];
+//                byte[] imageData = new byte[0];
 
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     byteBuffer.write(buffer, 0, bytesRead);
@@ -214,55 +212,19 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                while ((bytesRead = bis.read(buffer)) != -1) {
-                    byte[] temp = new byte[imageData.length + bytesRead];
-                    System.arraycopy(imageData, 0, temp, 0, imageData.length);
-                    System.arraycopy(buffer, 0, temp, imageData.length, bytesRead);
-                    imageData = temp;
-
-                    if (isCompleteImage(imageData)) {
-                        decodeAndDisplayImage(imageData);
-                        imageData = new byte[0];
-                    }
-                }
-//                BitmapFactory.Options options = new BitmapFactory.Options();
-//                options.inSampleSize = 2; // 根据实际调整采样率
-//                options.inPreferredConfig = Bitmap.Config.RGB_565;
+//                while ((bytesRead = bis.read(buffer)) != -1) {
+//                    byte[] temp = new byte[imageData.length + bytesRead];
+//                    System.arraycopy(imageData, 0, temp, 0, imageData.length);
+//                    System.arraycopy(buffer, 0, temp, imageData.length, bytesRead);
+//                    imageData = temp;
 //
-//                while (isReceiving && !Thread.currentThread().isInterrupted()) {
-//                    int readByte;
-//                    // 使用JPEG起始/结束标记判断图片边界
-//                    while ((readByte = bis.read()) != -1) {
-//                        buffer.write(readByte);
-//
-//                        // 检测JPEG结束标记(0xFFD9)
-//                        if (buffer.size() > 1
-//                                && (buffer.toByteArray()[buffer.size() - 2] & 0xFF) == 0xFF
-//                                && (buffer.toByteArray()[buffer.size() - 1] & 0xFF) == 0xD9) {
-//
-//                            // 解码前回收旧Bitmap
-//                            if (currentBitmap != null && !currentBitmap.isRecycled()) {
-//                                currentBitmap.recycle();
-//                            }
-//
-//                            // 解码并显示
-//                            byte[] imageData = buffer.toByteArray();
-//                            currentBitmap = BitmapFactory.decodeByteArray(
-//                                    imageData, 0, imageData.length, options);
-//
-//                            runOnUiThread(() -> {
-//                                videoView.setImageBitmap(currentBitmap);
-//                            });
-//
-//                            buffer.reset(); // 清空缓冲区
-//                            break; // 处理下一张图片
-//                        }
+//                    if (isCompleteImage(imageData)) {
+//                        decodeAndDisplayImage(imageData);
+//                        imageData = new byte[0];
 //                    }
 //                }
             } catch (IOException e) {
                 Log.e(TAG, "接收图像错误: " + e.getMessage());
-            } finally {
-//                closeResources(inputStream, buffer);
             }
         }).start();
     }
@@ -307,21 +269,6 @@ public class MainActivity extends AppCompatActivity {
 //            BitmapFactory.decodeByteArray(data, 0, data.length, options);
             BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
             // 动态计算缩放比例（优化公式）
-//            int width = options.outWidth;
-//            int height = options.outHeight;
-//            int targetSize = 1024; // 目标最大边长
-//            int scale = 1;
-//
-//            if (width > targetSize || height > targetSize) {
-//                int halfWidth = width / 2;
-//                int halfHeight = height / 2;
-//                while ((halfWidth / scale) > targetSize || (halfHeight / scale) > targetSize) {
-//                    scale *= 2;
-//                }
-//            }
-//            // 动态计算缩放比例
-//            options.inSampleSize = scale;
-
             options.inSampleSize = 2; // 根据实际调整采样率
             options.inPreferredConfig = Bitmap.Config.RGB_565;
 
