@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     // 全局变量保存当前显示的 Bitmap，确保旧对象能被回收
     private Bitmap currentBitmap = null;
     // 创建一个固定大小的线程池
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    ExecutorService executorService = Executors.newFixedThreadPool(5);
     private volatile boolean isReceiving = false;
 
 
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 if ("fire".equalsIgnoreCase(message)) {
                     sendFireCommand();
                 }
-                updateClientMessage(message);
+//                updateClientMessage(message);
             }
         } catch (IOException e) {
             Log.e(TAG, "读取消息错误: " + e.getMessage());
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startReceivingImages(Socket socket) {
         isReceiving = true;
-        new Thread(() -> {
+//        new Thread(() -> {
             InputStream inputStream = null;
             try {
                 inputStream = socket.getInputStream();
@@ -207,26 +207,14 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     // 检查缓冲区大小，避免无限增长
-                    if (byteBuffer.size() > 1024 * 1024) { // 最大 1MB
-                        byteBuffer.reset();
-                    }
-                }
-
-//                while ((bytesRead = bis.read(buffer)) != -1) {
-//                    byte[] temp = new byte[imageData.length + bytesRead];
-//                    System.arraycopy(imageData, 0, temp, 0, imageData.length);
-//                    System.arraycopy(buffer, 0, temp, imageData.length, bytesRead);
-//                    imageData = temp;
-//
-//                    if (isCompleteImage(imageData)) {
-//                        decodeAndDisplayImage(imageData);
-//                        imageData = new byte[0];
+//                    if (byteBuffer.size() > 1024 * 1024) { // 最大 1MB
+//                        byteBuffer.reset();
 //                    }
-//                }
+                }
             } catch (IOException e) {
                 Log.e(TAG, "接收图像错误: " + e.getMessage());
             }
-        }).start();
+//        }).start();
     }
 
     // 资源回收方法
@@ -262,38 +250,39 @@ public class MainActivity extends AppCompatActivity {
     }
     // 解码并显示图像
     private void decodeAndDisplayImage(final byte[] imageData) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        try {
-            // 解码时缩放图像避免内存溢出
-            options.inJustDecodeBounds = true;
-//            BitmapFactory.decodeByteArray(data, 0, data.length, options);
-            BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
-            // 动态计算缩放比例（优化公式）
-            options.inSampleSize = 2; // 根据实际调整采样率
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
+//        new Thread(() -> {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            try {
+                // 解码时缩放图像避免内存溢出
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
+                // 动态计算缩放比例（优化公式）
+                options.inSampleSize = 2; // 根据实际调整采样率
+                options.inPreferredConfig = Bitmap.Config.RGB_565;
 
-            // 解码缩放后的图像
-            options.inJustDecodeBounds = false;
-            Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
-            if (bitmap != null) {
-                uiHandler.post(() -> {
-                    // 回收旧Bitmap
-                    if (currentBitmap != null && !currentBitmap.isRecycled()) {
-                        currentBitmap.recycle();
-                    }
+                // 解码缩放后的图像
+                options.inJustDecodeBounds = false;
+                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
+                if (bitmap != null) {
+                    uiHandler.post(() -> {
+                        // 回收旧Bitmap
+                        if (currentBitmap != null && !currentBitmap.isRecycled()) {
+                            currentBitmap.recycle();
+                        }
 
-                    videoView.setImageBitmap(bitmap);
-                    currentBitmap = bitmap; // 保持引用
-                });
+                        videoView.setImageBitmap(bitmap);
+                        currentBitmap = bitmap; // 保持引用
+                    });
+                }
+            } catch (IllegalArgumentException e) {
+                // 处理 inBitmap 复用失败的情况
+                options.inBitmap = null;
+                // 避免递归调用，改为日志记录
+                Log.e(TAG, "解码失败，重试参数调整后仍失败: " + e.getMessage());
+            } catch (Exception e) {
+                Log.e(TAG, "解码错误: " + e.getMessage());
             }
-        } catch (IllegalArgumentException e) {
-            // 处理 inBitmap 复用失败的情况
-            options.inBitmap = null;
-            // 避免递归调用，改为日志记录
-            Log.e(TAG, "解码失败，重试参数调整后仍失败: " + e.getMessage());
-        } catch (Exception e) {
-            Log.e(TAG, "解码错误: " + e.getMessage());
-        }
+//        }).start();
     }
 
     // 用于执行命令的 Runnable
@@ -389,10 +378,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleDisconnection() {
         isConnected = false;
-        runOnUiThread(() -> {
-            tvServerStatus.setText("连接已断开");
-            Toast.makeText(this, "连接断开", Toast.LENGTH_SHORT).show();
-        });
+//        runOnUiThread(() -> {
+//            tvServerStatus.setText("连接已断开");
+//            Toast.makeText(this, "连接断开", Toast.LENGTH_SHORT).show();
+//        });
         try {
             if (clientSocket != null) clientSocket.close();
             if (commandWriter != null) commandWriter.close();
