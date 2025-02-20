@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     android:orientation="vertical"
     android:padding="10dp">
 
@@ -15,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="50dp"
         android:layout_marginBottom="20dp"
-        android:text="Server Status: Waiting for connection..."
+        android:text="Server Status"
         android:textSize="16sp" />
 
     <TextView
@@ -23,22 +24,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:text="IP: "
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/tvServerPort"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:text="Port: "
+        android:text="IP and Port"
         android:textSize="16sp" />
 
     <TextView
         android:id="@+id/tvClientMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="图传："
         android:textSize="16sp" />
 
     <!-- 创建上下左右按钮 -->
@@ -47,10 +39,10 @@
         android:id="@+id/video_view"
         android:layout_width="354dp"
         android:layout_height="263dp"
-        android:background="#F6F3F3"/>
+        android:background="#F6F3F3" />
 
     <GridLayout
-        android:layout_width="358dp"
+        android:layout_width="363dp"
         android:layout_height="235dp"
         android:columnCount="3"
         android:gravity="center"
@@ -58,8 +50,8 @@
 
         <Button
             android:id="@+id/btnUp"
-            android:layout_width="136dp"
-            android:layout_height="74dp"
+            android:layout_width="120dp"
+            android:layout_height="80dp"
             android:layout_row="0"
             android:layout_column="1"
             android:text="↑"
@@ -67,8 +59,8 @@
 
         <Button
             android:id="@+id/btnLeft"
-            android:layout_width="108dp"
-            android:layout_height="78dp"
+            android:layout_width="120dp"
+            android:layout_height="80dp"
             android:layout_row="1"
             android:layout_column="0"
             android:text="←"
@@ -76,8 +68,8 @@
 
         <Button
             android:id="@+id/btnRight"
-            android:layout_width="108dp"
-            android:layout_height="74dp"
+            android:layout_width="120dp"
+            android:layout_height="80dp"
             android:layout_row="1"
             android:layout_column="2"
             android:text="→"
@@ -85,11 +77,20 @@
 
         <Button
             android:id="@+id/btnDown"
-            android:layout_width="139dp"
-            android:layout_height="82dp"
-            android:layout_row="2"
+            android:layout_width="120dp"
+            android:layout_height="80dp"
+            android:layout_row="3"
             android:layout_column="1"
             android:text="↓"
             android:textSize="25sp" />
+
     </GridLayout>
+
+    <Switch
+        android:id="@+id/switch2"
+        android:layout_width="119dp"
+        android:layout_height="64dp"
+        android:text="循迹 / 遥控"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
+
 </LinearLayout>

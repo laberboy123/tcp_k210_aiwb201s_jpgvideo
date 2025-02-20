@@ -2,24 +2,19 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -28,12 +23,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private volatile boolean isConnected = false;
     // 用于发送命令的标志
     private boolean isPressed = false;
-    private Handler handler = new Handler();
-    private Handler uiHandler = new Handler(Looper.getMainLooper());
+    private final Handler handler = new Handler();
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private Button currentButton; // 记录当前按下的按钮
     // 全局变量保存当前显示的 Bitmap，确保旧对象能被回收
     private Bitmap currentBitmap = null;
@@ -74,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
         // 获取 UI 控件的引用
         tvServerStatus = findViewById(R.id.tvServerStatus);
         TextView tvServerIP = findViewById(R.id.tvServerIP);
-        TextView tvServerPort = findViewById(R.id.tvServerPort);
 
         tvClientMessage = findViewById(R.id.tvClientMessage);
         videoView = findViewById(R.id.video_view);
@@ -83,6 +74,18 @@ public class MainActivity extends AppCompatActivity {
         Button btnDown = findViewById(R.id.btnDown);
         Button btnLeft = findViewById(R.id.btnLeft);
         Button btnRight = findViewById(R.id.btnRight);
+
+        @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchMode = findViewById(R.id.switch2);
+        switchMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // 判断 Switch 是否被切换
+            if (isChecked) {
+                // Switch 被打开，发送 CHANGE_MODE 命令
+                sendChangeModeCommand();
+            } else {
+                // Switch 被关闭时，你也可以决定是否发送命令，或者什么都不做
+                 sendChangeModeCommand();  // 如果需要在关闭时也发送命令，取消注释此行
+            }
+        });
 
         // 设置按钮按下和松开的监听器
         setButtonPressListener(btnUp);
@@ -96,8 +99,7 @@ public class MainActivity extends AppCompatActivity {
         } else{
             // 显示服务器的 IP 和端口
             String serverIP = Utils.getLocalIpAddress(this);
-            tvServerIP.setText("IP: " + serverIP);
-            tvServerPort.setText("Port: " + SERVER_PORT);
+            tvServerIP.setText("服务器信息：" + serverIP + ":" + SERVER_PORT);
         }
 
         // 启动 TCP 服务器
@@ -124,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                     commandWriter = new PrintWriter(outputStream, true); // 保持输出流
 
                     // 读取客户端文本消息
-                    executorService.submit(() -> readClientMessage(clientSocket));
+//                    executorService.submit(() -> readClientMessage(clientSocket));
 
                     // 启动接收图像流
                     executorService.submit(() -> startReceivingImages(clientSocket));
@@ -141,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String message;
             while ((message = reader.readLine()) != null) {
+                tvClientMessage.setText(message);
                 if ("fire".equalsIgnoreCase(message)) {
                     sendFireCommand();
                 }
@@ -180,13 +183,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     private void startReceivingImages(Socket socket) {
         isReceiving = true;
-        InputStream inputStream = null;
         try {
-            inputStream = socket.getInputStream();
+            InputStream inputStream = socket.getInputStream();
             ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-            byte[] buffer = new byte[2048]; // 增大缓冲区
+            byte[] buffer = new byte[8192]; // 增大缓冲区
             int bytesRead;
 
             while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -197,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
                 if (isCompleteImage(data)) {
                     Log.d(TAG, "完整图像大小: " + data.length);
 
-                    // 解码并显示图像
                     executorService.submit(() -> decodeAndDisplayImage(data));
                     byteBuffer.reset(); // 重置缓冲区
                 }
@@ -227,43 +230,18 @@ public class MainActivity extends AppCompatActivity {
 
     // 检查 JPEG 完整性
     private boolean isCompleteImage(byte[] data) {
-        if (data.length < 4) return false;
-        // 检查起始标记 (0xFFD8)
-        if (data[0] != (byte) 0xFF || data[1] != (byte) 0xD8) return false;
-        // 检查结束标记 (0xFFD9)
-        for (int i = data.length - 2; i >= 1; i--) {
-            if (data[i] == (byte) 0xFF && data[i + 1] == (byte) 0xD9) {
-                return true;
-            }
+        if (data.length < 4) {
+            return false;
         }
-        return false;
+        byte[] startMarker = { (byte) 0xFF, (byte) 0xD8 };
+        byte[] endMarker = { (byte) 0xFF, (byte) 0xD9 };
+        return Arrays.equals(Arrays.copyOfRange(data, 0, 2), startMarker) &&
+                Arrays.equals(Arrays.copyOfRange(data, data.length - 2, data.length), endMarker);
     }
     // 解码并显示图像
     private void decodeAndDisplayImage(final byte[] imageData) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         try {
-            // 解码时缩放图像避免内存溢出
-            options.inJustDecodeBounds = true;
-            BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
-            // 动态计算缩放比例（优化公式）
-            int width = options.outWidth;
-            int height = options.outHeight;
-            int targetSize = 1024; // 目标最大边长
-            int scale = 1;
-
-            if (width > targetSize || height > targetSize) {
-                int halfWidth = width / 2;
-                int halfHeight = height / 2;
-                while ((halfWidth / scale) > targetSize || (halfHeight / scale) > targetSize) {
-                    scale *= 2;
-                }
-            }
-            // 动态计算缩放比例
-            options.inSampleSize = scale;
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-
-            // 解码缩放后的图像
-            options.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length, options);
             if (bitmap != null) {
                 uiHandler.post(() -> {
@@ -302,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
     private void setButtonPressListener(Button button) {
         button.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
-                case android.view.MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_DOWN:
                     // 按下按钮时开始发送命令
                     if (!isPressed) {  // 防止重复启动
                         isPressed = true;
@@ -311,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
 
-                case android.view.MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_UP:
                     // 松开按钮时停止发送命令
                     if (isPressed) {
                         isPressed = false;
@@ -323,6 +301,29 @@ public class MainActivity extends AppCompatActivity {
             return false; // 返回 false 以确保触发点击事件
         });
     }
+
+    // 切换模式按钮逻辑
+    private void sendChangeModeCommand(){
+        if (clientSocket == null || clientSocket.isClosed()) {
+            uiHandler.post(() -> Toast.makeText(this, "No client connected", Toast.LENGTH_SHORT).show());
+            return;
+        }
+        String command = "CHANGE_MODE";
+        executorService.submit(() -> {
+            try {
+                synchronized (commandWriter) {  // 确保写操作不会被中断
+                    commandWriter.println(command);
+                    Log.d(TAG, "命令已发送: " + command);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "发送异常: " + e.getClass().getSimpleName());
+                handleDisconnection();
+            }
+        });
+
+    }
+
 
     // 持续发送命令的逻辑
     private void sendCommandContinuous(Button button) {
@@ -379,10 +380,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleDisconnection() {
         isConnected = false;
-//        runOnUiThread(() -> {
-//            tvServerStatus.setText("连接已断开");
-//            Toast.makeText(this, "连接断开", Toast.LENGTH_SHORT).show();
-//        });
         try {
             if (clientSocket != null) clientSocket.close();
             if (commandWriter != null) commandWriter.close();
