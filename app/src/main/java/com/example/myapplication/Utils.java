@@ -25,7 +25,7 @@ public class Utils {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         int ipAddress = wifiInfo.getIpAddress();
 
-        // 将 int 类型的 IP 地址转换为点分十进制字符串
+        // 将 int 类型的 IP 地址转换为点分十进制字符串显示
         return String.format(
                 "%d.%d.%d.%d",
                 (ipAddress & 0xff),

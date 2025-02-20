@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnLeft = findViewById(R.id.btnLeft);
         Button btnRight = findViewById(R.id.btnRight);
 
+        // 获取 Switch
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchMode = findViewById(R.id.switch2);
         switchMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             // 判断 Switch 是否被切换
